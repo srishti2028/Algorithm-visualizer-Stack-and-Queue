@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title> Algorithm Visualizer – </title>
+<style>
+/* ---------- Aurora Theme CSS ---------- */
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --aurora-dark:#0a192f;--aurora-teal:#1a4d5e;--aurora-magenta:#e91e63;
+  --aurora-cyan:#00ffff;--aurora-purple:#9c27b0;--text-primary:#e0e0e0;
+  --text-secondary:#a0a0a0;
+}
+body{
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background:linear-gradient(135deg,var(--aurora-dark) 0%, #1a1a2e 50%, var(--aurora-teal) 100%);
+  color:var(--text-primary);min-height:100vh;overflow-x:hidden;
+}
+.particles{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:0}
+nav{position:fixed;top:0;width:100%;background:rgba(10,25,47,0.9);backdrop-filter:blur(8px);padding:0.8rem 1.2rem;z-index:1000;border-bottom:2px solid var(--aurora-cyan)}
+nav ul{list-style:none;display:flex;gap:1rem;justify-content:center;align-items:center;flex-wrap:wrap}
+nav a{color:var(--text-primary);text-decoration:none;padding:.45rem .8rem;border-radius:8px;transition:all .2s}
+nav a.active, nav a:hover{color:var(--aurora-cyan);background:rgba(0,255,255,0.06)}
+.homepage{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:90vh;text-align:center;z-index:1;padding:2rem;}
+.logo{width:140px;height:140px;filter:drop-shadow(0 0 30px var(--aurora-cyan));}
+.title{font-size:2.4rem;font-weight:700;background:linear-gradient(45deg,var(--aurora-cyan),var(--aurora-magenta),var(--aurora-purple));-webkit-background-clip:text;background-clip:text;color:transparent;margin-bottom:.6rem}
+.subtitle{color:var(--text-secondary);margin-bottom:1.6rem}
+.start-btn{padding:1rem 2rem;border-radius:40px;border:none;background:linear-gradient(45deg,var(--aurora-magenta),var(--aurora-purple));color:white;cursor:pointer;box-shadow:0 0 30px rgba(233,30,99,0.3)}
+.visualizer-container{display:none;padding:2rem;margin-top:80px;z-index:1}
+.visualizer-container.active{display:block}
+.controls{background:rgba(26,77,94,0.25);padding:1rem;border-radius:12px;border:2px solid var(--aurora-cyan);backdrop-filter:blur(6px);margin-bottom:1rem}
+.controls h2{color:var(--aurora-cyan);margin-bottom:.5rem}
+.control-group{display:flex;gap:.6rem;flex-wrap:wrap;align-items:center}
+input[type="number"],input[type="text"]{padding:.6rem;border-radius:8px;border:2px solid var(--aurora-cyan);background:rgba(10,25,47,0.8);color:var(--text-primary)}
+button{padding:.6rem 1rem;border-radius:8px;border:none;background:linear-gradient(45deg,var(--aurora-magenta),var(--aurora-purple));color:white;cursor:pointer}
+.canvas-container{background:rgba(10,25,47,0.45);border-radius:12px;padding:1rem;min-height:320px;border:2px solid var(--aurora-cyan);position:relative;overflow:hidden}
+.node{position:absolute;width:60px;height:60px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;box-shadow:0 0 20px rgba(0,0,0,0.4);transition:all .45s cubic-bezier(.2,.8,.2,1);border:3px solid var(--aurora-cyan);background:linear-gradient(135deg,var(--aurora-magenta),var(--aurora-purple));color:white}
+.node.small{width:44px;height:44px;font-size:0.85rem}
+.node.real{pointer-events:auto}
+.node.temp{pointer-events:none;z-index:9999;opacity:1}
+.node.highlight{background:linear-gradient(135deg,var(--aurora-cyan),var(--aurora-purple));color:#001; transform: scale(1.12)}
+.arrow{position:absolute;height:4px;background:var(--aurora-cyan);transform-origin:left center;box-shadow:0 0 10px var(--aurora-cyan)}
+.history-panel{background:rgba(26,77,94,0.25);padding:.8rem;border-radius:10px;border:2px solid var(--aurora-cyan);margin-top:1rem;max-height:220px;overflow:auto}
+.pseudocode{background:rgba(10,25,47,0.6);padding:.8rem;border-radius:10px;border:2px solid var(--aurora-cyan);font-family:monospace;margin-top:1rem}
+.badge{position:absolute;padding:.2rem .5rem;border-radius:6px;background:rgba(0,0,0,0.6);color:#fff;font-size:0.8rem;border:1px solid rgba(255,255,255,0.06)}
+.node.fading{opacity:0; transform: translateY(-60px) scale(.7); transition:all .6s ease-in}
+@media (max-width:768px){.title{font-size:2rem}.node{width:48px;height:48px;font-size:.9rem}}
+</style>
+</head>
+<body>
+<div class="particles" id="particles"></div>
+
+<nav id="navbar">
+  <ul>
+    <li><a href="#" data-page="home" class="active">Home</a></li>
+    <li><a href="#" data-page="stack-array">Stack (Array)</a></li>
+    <li><a href="#" data-page="stack-linked">Stack (Linked List)</a></li>
+    <li><a href="#" data-page="queue-array">Queue (Array)</a></li>
+    <li><a href="#" data-page="queue-linked">Queue (Linked List)</a></li>
+  </ul>
+</nav>
+
+<!-- Home -->
+<section class="homepage" id="home">
+  <img class="logo" src="data:image/svg+xml;utf8,
+    <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'>
+      <defs><linearGradient id='g' x1='0' x2='1'><stop offset='0' stop-color='%2300ffff'/><stop offset='1' stop-color='%23e91e63'/></linearGradient></defs>
+      <circle cx='100' cy='100' r='80' fill='none' stroke='url(%23g)' stroke-width='8'/>
+      <circle cx='70' cy='80' r='12' fill='url(%23g)'/>
+      <circle cx='130' cy='80' r='12' fill='url(%23g)'/>
+      <circle cx='100' cy='130' r='12' fill='url(%23g)'/>
+      <line x1='70' y1='80' x2='130' y2='80' stroke='url(%23g)' stroke-width='4'/>
+      <line x1='70' y1='80' x2='100' y2='130' stroke='url(%23g)' stroke-width='4'/>
+      <line x1='130' y1='80' x2='100' y2='130' stroke='url(%23g)' stroke-width='4'/>
+    </svg>" alt="logo">
+  <h1 class="title">Algorithm Visualizer –</h1>
+  <p class="subtitle">Array and Linked-List versions of Stack & Queue..</p>
+  <button class="start-btn" onclick="showPage('stack-array')">Start with Stack (Array)</button>
+</section>
+
+<!-- Stack (Array) -->
+<section id="stack-array" class="visualizer-container">
+  <div class="controls">
+    <h2>Stack Visualizer (Array-based)</h2>
+    <div class="control-group">
+      <input id="stack-value" type="number" placeholder="value" min="0" max="999">
+      <button onclick="uiStackPush()">Push</button>
+      <button onclick="uiStackPop()">Pop</button>
+      <button onclick="uiStackPeek()">Peek</button>
+      <button onclick="uiClearStack()">Clear</button>
+      <label style="margin-left:8px">Animation Speed</label>
+      <input id="stack-speed" type="range" min="50" max="800" value="250">
+    </div>
+  </div>
+  <div class="canvas-container" id="stack-canvas" style="position:relative;height:320px;"></div>
+  <div class="history-panel"><h3>History</h3><div id="stack-history"></div></div>
+  <div class="pseudocode"><strong>Pseudocode (Array Stack)</strong>
+    <div>push(x): if top < MAX then stack[++top] = x</div>
+    <div>pop(): if top >= 0 return stack[top--]</div>
+  </div>
+</section>
+
+<!-- Stack (Linked List) -->
+<section id="stack-linked" class="visualizer-container">
+  <div class="controls">
+    <h2>Stack Visualizer (Linked List)</h2>
+    <div class="control-group">
+      <input id="llstack-value" type="number" placeholder="value" min="0" max="999">
+      <button onclick="uiLLStackPush()">Push (head)</button>
+      <button onclick="uiLLStackPop()">Pop (head)</button>
+      <button onclick="uiLLStackPeek()">Peek</button>
+      <button onclick="uiLLStackClear()">Clear</button>
+      <label style="margin-left:8px">Animation Speed</label>
+      <input id="llstack-speed" type="range" min="50" max="800" value="250">
+    </div>
+  </div>
+  <div class="canvas-container" id="llstack-canvas" style="position:relative;height:320px;">
+    <!-- linked-list stack visual -->
+  </div>
+  <div class="history-panel"><h3>History</h3><div id="llstack-history"></div></div>
+  <div class="pseudocode"><strong>Pseudocode (Linked-list Stack)</strong>
+    <div>push(x): newNode->next = head; head = newNode</div>
+    <div>pop(): if head != NULL remove head; head = head->next</div>
+  </div>
+</section>
+
+<!-- Queue (Array) -->
+<section id="queue-array" class="visualizer-container">
+  <div class="controls">
+    <h2>Queue Visualizer (Array / Circular)</h2>
+    <div class="control-group">
+      <input id="queue-value" type="number" placeholder="value" min="0" max="999">
+      <button onclick="uiQueueEnqueue()">Enqueue</button>
+      <button onclick="uiQueueDequeue()">Dequeue</button>
+      <button onclick="uiClearQueue()">Clear</button>
+      <label style="margin-left:8px">Animation Speed</label>
+      <input id="queue-speed" type="range" min="50" max="800" value="250">
+    </div>
+  </div>
+  <div class="canvas-container" id="queue-canvas" style="position:relative;height:200px;">
+    <div id="queue-front-badge" class="badge" style="left:8px;top:8px">FRONT: -</div>
+    <div id="queue-rear-badge" class="badge" style="right:8px;top:8px">REAR: -</div>
+  </div>
+  <div class="history-panel"><h3>History</h3><div id="queue-history"></div></div>
+</section>
+
+<!-- Queue (Linked List) -->
+<section id="queue-linked" class="visualizer-container">
+  <div class="controls">
+    <h2>Queue Visualizer (Linked List)</h2>
+    <div class="control-group">
+      <input id="llqueue-value" type="number" placeholder="value" min="0" max="999">
+      <button onclick="uiLLQueueEnqueue()">Enqueue (tail)</button>
+      <button onclick="uiLLQueueDequeue()">Dequeue (head)</button>
+      <button onclick="uiLLQueueClear()">Clear</button>
+      <label style="margin-left:8px">Animation Speed</label>
+      <input id="llqueue-speed" type="range" min="50" max="800" value="250">
+    </div>
+  </div>
+  <div class="canvas-container" id="llqueue-canvas" style="position:relative;height:200px;">
+    <div id="llqueue-front-badge" class="badge" style="left:8px;top:8px">FRONT: -</div>
+    <div id="llqueue-rear-badge" class="badge" style="right:8px;top:8px">REAR: -</div>
+    <!-- linked-list queue visual -->
+  </div>
+  <div class="history-panel"><h3>History</h3><div id="llqueue-history"></div></div>
+  <div class="pseudocode"><strong>Pseudocode (Linked-list Queue)</strong>
+    <div>enqueue(x): tail->next = newNode; tail = newNode</div>
+    <div>dequeue(): if head != NULL remove head; head = head->next</div>
+  </div>
+</section>
+
+<footer>3D Algorithm Visualizer – Backend v2 — Frontend (JS) connected. Array & Linked-list versions included.</footer>
+
+<script>
+// Page routing
+const pages = ['home','stack-array','stack-linked','queue-array','queue-linked'];
+document.querySelectorAll('nav a').forEach(a=>{
+  a.addEventListener('click', e=>{
+    e.preventDefault();
+    const p = a.dataset.page;
+    showPage(p);
+    document.querySelectorAll('nav a').forEach(x=>x.classList.remove('active'));
+    a.classList.add('active');
+  });
+});
+
+function showPage(page){
+  pages.forEach(p=>{
+    const el = document.getElementById(p);
+    if (!el) return;
+    if (p === page) el.classList.add('active'); else el.classList.remove('active');
+  });
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+(function makeParticles(){
+  const root = document.getElementById('particles');
+  for(let i=0;i<60;i++){
+    const d = document.createElement('div');
+    d.className='particle';
+    d.style.left = Math.random()*100 + '%';
+    d.style.top = Math.random()*100 + '%';
+    d.style.opacity = 0.12 + Math.random()*0.2;
+    d.style.transform = `scale(${0.5+Math.random()*1})`;
+    d.style.animationDuration = (16 + Math.random()*24) + 's';
+    root.appendChild(d);
+  }
+})();
+function clearElement(el){ while(el.firstChild) el.removeChild(el.firstChild); }
+function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
+function whenTransitionEnds(el){ return new Promise(res=>{ const fn=(e)=>{ el.removeEventListener('transitionend',fn); res(); }; el.addEventListener('transitionend',fn); }); }
+function addHistory(panel, text){
+  const m = document.createElement('div'); m.className='history-item'; m.innerText = `[${new Date().toLocaleTimeString()}] ${text}`;
+  const pan = document.getElementById(panel);
+  pan.appendChild(m); pan.scrollTop = pan.scrollHeight;
+}
+
+// ARRAY STACK  
+const StackUI = { arr: [], max: 100 };
+const stackCanvas = document.getElementById('stack-canvas');
+
+async function uiStackPush(){
+  const v = document.getElementById('stack-value').value;
+  if (v === '') return addHistory('stack-history','Enter value to push');
+  const val = Number(v);
+  addHistory('stack-history','push '+val);
+  await animateArrayStackPush(val);
+  StackUI.arr.push(val);
+  renderStack();
+}
+
+async function uiStackPop(){
+  if (StackUI.arr.length===0) { addHistory('stack-history','pop failed - empty'); return; }
+  addHistory('stack-history','pop');
+  await animateArrayStackPop();
+  const v = StackUI.arr.pop();
+  addHistory('stack-history','pop -> ' + v);
+  renderStack();
+}
+
+function uiStackPeek(){ if (StackUI.arr.length===0) return addHistory('stack-history','peek -> empty'); addHistory('stack-history','peek -> ' + StackUI.arr[StackUI.arr.length-1]); }
+function uiClearStack(){ StackUI.arr=[]; addHistory('stack-history','clear'); renderStack(); }
+
+//stack animations
+async function animateArrayStackPush(value){
+  const root = stackCanvas;
+  const temp = document.createElement('div');
+  temp.className = 'node temp';
+  temp.innerText = value;
+  temp.style.left = (root.clientWidth/2 - 30) + 'px';
+  temp.style.top = (root.clientHeight + 10) + 'px';
+  root.appendChild(temp);
+  const idx = StackUI.arr.length;
+  const targetTop = 20 + ( (StackUI.arr.length) * (60 + 8) );
+  await new Promise(r=>requestAnimationFrame(r));
+  temp.style.top = (targetTop) + 'px';
+  temp.style.left = (20) + 'px';
+  await whenTransitionEnds(temp);
+  temp.remove();
+}
+
+async function animateArrayStackPop(){
+  const root = stackCanvas;
+  const nodes = Array.from(root.querySelectorAll('.node.real'));
+  if(nodes.length === 0) return;
+  const topEl = nodes[nodes.length - 1];
+  const temp = topEl.cloneNode(true);
+  temp.classList.add('temp');
+  temp.classList.remove('real');
+  temp.style.left = (topEl.offsetLeft) + 'px';
+  temp.style.top = (topEl.offsetTop) + 'px';
+  root.appendChild(temp);
+  topEl.remove();
+  await new Promise(r=>requestAnimationFrame(r));
+  temp.classList.add('fading');
+  await new Promise(r=>setTimeout(r,600));
+  temp.remove();
+}
+
+function renderStack(){
+  const root = document.getElementById('stack-canvas');
+  clearElement(root);
+  const arr = StackUI.arr.slice();
+  const baseX = 20;
+  const baseY = 20;
+  for(let i=0;i<arr.length;i++){
+    const n = document.createElement('div');
+    n.className='node real';
+    n.style.left = (baseX) + 'px';
+    n.style.top = (baseY + (arr.length - 1 - i) * (60 + 8)) + 'px';
+    n.innerText = arr[i];
+    root.appendChild(n);
+  }
+  addHistory('stack-history','rendered stack ('+arr.length+' items)');
+}
+
+// LINKED-LIST STACK 
+
+const LLStack = { head: null, size: 0 };
+const llstackCanvas = document.getElementById('llstack-canvas');
+
+function createLLNode(id, val){
+  return { id:id, val:val, next:null };
+}
+
+async function uiLLStackPush(){
+  const v = document.getElementById('llstack-value').value;
+  if (v === '') return addHistory('llstack-history','Enter value to push');
+  const val = Number(v);
+  addHistory('llstack-history','push '+val);
+  await animateLLStackPush(val);
+  const n = createLLNode(Date.now()+Math.random(), val);
+  n.next = LLStack.head;
+  LLStack.head = n;
+  LLStack.size++;
+  renderLLStack();
+}
+
+async function uiLLStackPop(){
+  if (!LLStack.head) { addHistory('llstack-history','pop failed - empty'); return; }
+  addHistory('llstack-history','pop');
+  await animateLLStackPop();
+  const v = LLStack.head.val;
+  LLStack.head = LLStack.head.next;
+  LLStack.size--;
+  addHistory('llstack-history','pop -> '+v);
+  renderLLStack();
+}
+
+function uiLLStackPeek(){ if (!LLStack.head) return addHistory('llstack-history','peek -> empty'); addHistory('llstack-history','peek -> '+LLStack.head.val); }
+function uiLLStackClear(){ LLStack.head=null; LLStack.size=0; addHistory('llstack-history','clear'); renderLLStack(); }
+
+// LLStack animations 
+async function animateLLStackPush(value){
+  const root = llstackCanvas;
+  const temp = document.createElement('div'); temp.className='node temp'; temp.innerText = value;
+  temp.style.left = (root.clientWidth/2 - 30) + 'px'; temp.style.top = (root.clientHeight + 10) + 'px';
+  root.appendChild(temp);
+  await new Promise(r=>requestAnimationFrame(r));
+  temp.style.left = (20) + 'px';
+  temp.style.top = (20) + 'px';
+  await whenTransitionEnds(temp);
+  temp.remove();
+}
+
+async function animateLLStackPop(){
+  const root = llstackCanvas;
+  const nodes = Array.from(root.querySelectorAll('.node.real'));
+  if(nodes.length === 0) return;
+  const headEl = nodes[0];
+  const temp = headEl.cloneNode(true);
+  temp.classList.add('temp'); temp.classList.remove('real');
+  temp.style.left = headEl.offsetLeft + 'px'; temp.style.top = headEl.offsetTop + 'px';
+  root.appendChild(temp);
+  headEl.remove();
+  await new Promise(r=>requestAnimationFrame(r));
+  temp.classList.add('fading');
+  await new Promise(r=>setTimeout(r,600));
+  temp.remove();
+}
+
+function renderLLStack(){
+  const root = llstackCanvas;
+  clearElement(root);
+  let cur = LLStack.head;
+  let idx = 0;
+  const baseX = 20;
+  const baseY = 20;
+  while(cur){
+    const el = document.createElement('div'); el.className='node real small';
+    el.style.left = (baseX + idx * 110) + 'px';
+    el.style.top = baseY + 'px';
+    el.innerText = cur.val;
+    root.appendChild(el);
+    if(cur.next){
+      const a = document.createElement('div'); a.className='arrow';
+      const x1 = baseX + idx * 110 + 44; const y1 = baseY + 30;
+      const x2 = baseX + (idx+1) * 110; const y2 = baseY + 30;
+      const dx = x2-x1; const dy = y2-y1; const len = Math.sqrt(dx*dx+dy*dy); const ang = Math.atan2(dy,dx)*180/Math.PI;
+      a.style.left = x1 + 'px'; a.style.top = y1 + 'px'; a.style.width = len + 'px'; a.style.transform = 'rotate('+ang+'deg)';
+      root.appendChild(a);
+    }
+    cur = cur.next; idx++;
+  }
+  addHistory('llstack-history','rendered linked-stack ('+LLStack.size+' nodes)');
+}
+
+//ARRAY QUEUE
+const QueueUI = { arr: [], max: 100 };
+const queueCanvas = document.getElementById('queue-canvas');
+const frontBadge = document.getElementById('queue-front-badge');
+const rearBadge = document.getElementById('queue-rear-badge');
+
+async function uiQueueEnqueue(){
+  const v = document.getElementById('queue-value').value;
+  if (v === '') return addHistory('queue-history','Enter value');
+  const val = Number(v);
+  addHistory('queue-history','enqueue '+val);
+  await animateArrayQueueEnqueue(val);
+  QueueUI.arr.push(val);
+  renderQueue();
+}
+
+async function uiQueueDequeue(){
+  if (QueueUI.arr.length===0) { addHistory('queue-history','dequeue failed - empty'); return; }
+  addHistory('queue-history','dequeue');
+  await animateArrayQueueDequeue();
+  const v = QueueUI.arr.shift();
+  addHistory('queue-history','dequeue -> '+v);
+  renderQueue();
+}
+
+function uiClearQueue(){ QueueUI.arr=[]; addHistory('queue-history','clear'); renderQueue(); }
+
+async function animateArrayQueueEnqueue(value){
+  const root = queueCanvas;
+  const temp = document.createElement('div'); temp.className='node temp small'; temp.innerText = value;
+  temp.style.left = (-80) + 'px'; temp.style.top = (root.clientHeight/2 - 22) + 'px';
+  root.appendChild(temp);
+  const idx = QueueUI.arr.length;
+  const targetLeft = 12 + idx * 90;
+  await new Promise(r=>requestAnimationFrame(r));
+  temp.style.left = targetLeft + 'px';
+  await whenTransitionEnds(temp);
+  temp.remove();
+}
+
+async function animateArrayQueueDequeue(){
+  const root = queueCanvas;
+  const nodes = Array.from(root.querySelectorAll('.node.real'));
+  if(nodes.length === 0) return;
+  const frontEl = nodes[0];
+  const temp = frontEl.cloneNode(true); temp.classList.add('temp'); temp.classList.remove('real');
+  temp.style.left = frontEl.offsetLeft + 'px'; temp.style.top = frontEl.offsetTop + 'px';
+  root.appendChild(temp); frontEl.remove();
+  await new Promise(r=>requestAnimationFrame(r));
+  temp.style.transform = 'translateY(-60px) scale(.8)'; temp.style.opacity = '0';
+  await new Promise(r=>setTimeout(r,500));
+  temp.remove();
+}
+
+function renderQueue(){
+  const root = document.getElementById('queue-canvas');
+  clearElement(root);
+  frontBadge.innerText = 'FRONT: ' + (QueueUI.arr.length ? '0' : '-');
+  rearBadge.innerText = 'REAR: ' + (QueueUI.arr.length ? (QueueUI.arr.length - 1) : '-');
+  root.appendChild(frontBadge); root.appendChild(rearBadge);
+  const arr = QueueUI.arr.slice();
+  for(let i=0;i<arr.length;i++){
+    const n = document.createElement('div'); n.className='node real small';
+    n.style.left = (12 + i * 90) + 'px'; n.style.top = '60px'; n.innerText = arr[i];
+    root.appendChild(n);
+  }
+  addHistory('queue-history','rendered queue ('+arr.length+' items)');
+}
+
+// LINKED-LIST QUEUE 
+const LLQueue = { head: null, tail: null, size: 0 };
+const llqueueCanvas = document.getElementById('llqueue-canvas');
+const llqFrontBadge = document.getElementById('llqueue-front-badge');
+const llqRearBadge = document.getElementById('llqueue-rear-badge');
+
+async function uiLLQueueEnqueue(){
+  const v = document.getElementById('llqueue-value').value;
+  if (v === '') return addHistory('llqueue-history','Enter value');
+  const val = Number(v);
+  addHistory('llqueue-history','enqueue '+val);
+  await animateLLQueueEnqueue(val);
+  const n = createLLNode(Date.now()+Math.random(), val);
+  if(!LLQueue.head){ LLQueue.head = LLQueue.tail = n; }
+  else { LLQueue.tail.next = n; LLQueue.tail = n; }
+  LLQueue.size++;
+  renderLLQueue();
+}
+
+async function uiLLQueueDequeue(){
+  if (!LLQueue.head) { addHistory('llqueue-history','dequeue failed - empty'); return; }
+  addHistory('llqueue-history','dequeue');
+  await animateLLQueueDequeue();
+  const v = LLQueue.head.val;
+  LLQueue.head = LLQueue.head.next;
+  if(!LLQueue.head) LLQueue.tail = null;
+  LLQueue.size--;
+  addHistory('llqueue-history','dequeue -> '+v);
+  renderLLQueue();
+}
+
+function uiLLQueueClear(){ LLQueue.head = LLQueue.tail = null; LLQueue.size = 0; addHistory('llqueue-history','clear'); renderLLQueue(); }
+
+// LL queue animations
+async function animateLLQueueEnqueue(value){
+  const root = llqueueCanvas;
+  const temp = document.createElement('div'); temp.className='node temp small'; temp.innerText = value;
+  temp.style.left = (-80) + 'px'; temp.style.top = (root.clientHeight/2 - 22) + 'px';
+  root.appendChild(temp);
+  const idx = LLQueue.size;
+  const targetLeft = 12 + idx * 110;
+  await new Promise(r=>requestAnimationFrame(r));
+  temp.style.left = targetLeft + 'px';
+  await whenTransitionEnds(temp);
+  temp.remove();
+}
+
+async function animateLLQueueDequeue(){
+  const root = llqueueCanvas;
+  const nodes = Array.from(root.querySelectorAll('.node.real'));
+  if(nodes.length === 0) return;
+  const frontEl = nodes[0];
+  const temp = frontEl.cloneNode(true); temp.classList.add('temp'); temp.classList.remove('real');
+  temp.style.left = frontEl.offsetLeft + 'px'; temp.style.top = frontEl.offsetTop + 'px';
+  root.appendChild(temp); frontEl.remove();
+  await new Promise(r=>requestAnimationFrame(r));
+  temp.style.transform = 'translateY(-60px) scale(.8)'; temp.style.opacity = '0';
+  await new Promise(r=>setTimeout(r,500));
+  temp.remove();
+}
+
+function renderLLQueue(){
+  const root = llqueueCanvas;
+  clearElement(root);
+  root.appendChild(llqFrontBadge); root.appendChild(llqRearBadge);
+  llqFrontBadge.innerText = 'FRONT: ' + (LLQueue.head ? LLQueue.head.val : '-');
+  llqRearBadge.innerText = 'REAR: ' + (LLQueue.tail ? LLQueue.tail.val : '-');
+
+  let cur = LLQueue.head;
+  let idx = 0;
+  const baseX = 12;
+  const baseY = 60;
+  while(cur){
+    const el = document.createElement('div'); el.className='node real small';
+    el.style.left = (baseX + idx * 110) + 'px'; el.style.top = baseY + 'px';
+    el.innerText = cur.val; root.appendChild(el);
+    if(cur.next){
+      const a = document.createElement('div'); a.className='arrow';
+      const x1 = baseX + idx * 110 + 44; const y1 = baseY + 22;
+      const x2 = baseX + (idx+1) * 110; const y2 = baseY + 22;
+      const dx = x2-x1; const dy = y2-y1; const len = Math.sqrt(dx*dx+dy*dy); const ang = Math.atan2(dy,dx)*180/Math.PI;
+      a.style.left = x1 + 'px'; a.style.top = y1 + 'px'; a.style.width = len + 'px'; a.style.transform = 'rotate('+ang+'deg)';
+      root.appendChild(a);
+    }
+    cur = cur.next; idx++;
+  }
+  addHistory('llqueue-history','rendered linked-queue ('+LLQueue.size+' nodes)');
+}
+
+// Initial render
+window.addEventListener('load', ()=>{
+  renderStack(); renderQueue(); renderLLStack(); renderLLQueue();
+});
+</script>
+</body>
+</html> 
