@@ -18,4 +18,4 @@ This project is an **interactive Algorithm Visualizer** that demonstrates how **
 
 ---
 
-ps://github.com/your-username/algorithm-visualizer.git
+ps://github.com/srishti2028/algorithm-visualizer.git
